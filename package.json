@@ -1,0 +1,35 @@
+{
+  "name": "pr-context-classifier",
+  "version": "0.1.0",
+  "description": "CLI that classifies a pull request body as complete or missing context, and asks author-facing clarifying questions when context is missing. Uses GPT-OSS-20B (bare routing) via OpenRouter.",
+  "type": "module",
+  "bin": {
+    "pr-context-classifier": "bin/pr-context-classifier.mjs"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "bash scripts/test.sh",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "pull-request",
+    "classifier",
+    "cli",
+    "openrouter",
+    "llm"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.20.3",
+    "typescript": "^7.0.2"
+  }
+}
