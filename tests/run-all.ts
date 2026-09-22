@@ -4,6 +4,7 @@ const MANY_FILES = [
   "dist/tests/config.test.js",
   "dist/tests/classify.test.js",
   "dist/tests/cli.test.js",
+  "dist/tests/workflow.test.js",
 ]
 
 const counts = { pass: 0, fail: 0 }
