@@ -86,6 +86,83 @@ for `COMPLETE`.
 The config file is the only place that specifies the command. Credentials
 stay in the file the command reads, so nothing in it is a credential.
 
+## Classifying many pull requests at once
+
+`.claude/workflows/pr-context-sweep.js` is a [Claude Code](https://claude.com/claude-code) workflow that classifies a whole repository's pull requests in parallel. One Haiku subagent per pull request reads `prompt/classifier-prompt.md` and answers under it. The workflow then comments on each body that misses context, quoting the rationale and the questions it produced.
+
+The workflow calls no model API of its own, so it needs no OpenRouter key, no config file, and no build. It requires the `gh` CLI, authenticated for the repository you point it at.
+
+```mermaid
+flowchart TB
+    ARGS["args: repo, state, limit, post,<br/>includeDrafts, promptPath, model"]
+
+    subgraph DISCOVER["Discover"]
+        LIST["one subagent runs<br/>gh pr list --json number,title,isDraft"]
+    end
+
+    DRAFT{"draft, and<br/>includeDrafts off?"}
+    SKIPPED["left out, counted in the log"]
+
+    subgraph CLASSIFY["Classify: one Haiku subagent per pull request, in parallel"]
+        PROMPT["cat prompt/classifier-prompt.md"]
+        BODY["gh pr view N --json body"]
+        ANSWER["answer under the fenced instructions,<br/>reading the body and nothing else"]
+        PROMPT --> BODY --> ANSWER
+    end
+
+    VERDICT{"verdict"}
+    DONE["no comment needed"]
+    REPORTED["returned in the result,<br/>posted nowhere"]
+
+    subgraph REPORT["Report: one subagent per pull request"]
+        READ["gh pr view N --json comments"]
+        MARKER{"marker already<br/>in a comment?"}
+        POSTED["already_posted, nothing written"]
+        WRITE["gh pr comment N --body-file<br/>rationale, questions, marker"]
+        READ --> MARKER
+        MARKER -->|"yes"| POSTED
+        MARKER -->|"no"| WRITE
+    end
+
+    ARGS --> LIST --> DRAFT
+    DRAFT -->|"yes"| SKIPPED
+    DRAFT -->|"no"| PROMPT
+    ANSWER --> VERDICT
+    VERDICT -->|"COMPLETE"| DONE
+    VERDICT -->|"MISSING_CONTEXT, post off"| REPORTED
+    VERDICT -->|"MISSING_CONTEXT, post on"| READ
+```
+
+The workflow pipelines the pull requests. A subagent starts the next phase for its own pull request the moment it finishes, so one subagent can post a comment while another still classifies a different body.
+
+Copy the file into your own repository at `.claude/workflows/pr-context-sweep.js`, then ask Claude Code to run it:
+
+```
+Workflow({name: 'pr-context-sweep'})
+```
+
+That reports one verdict per open pull request and posts nothing. Add `post: true` once you have read the questions:
+
+```
+Workflow({name: 'pr-context-sweep', args: {post: true}})
+```
+
+### Arguments
+
+| Key | Default | Meaning |
+| -- | -- | -- |
+| `repo` | the current repository | `owner/name` to classify |
+| `state` | `open` | `open`, `closed`, `merged`, or `all` |
+| `limit` | `100` | how many pull requests to list |
+| `post` | `false` | comment on the pull requests that miss context |
+| `includeDrafts` | `false` | include draft pull requests |
+| `promptPath` | `prompt/classifier-prompt.md` | where the subagent reads the prompt |
+| `model` | `haiku` | the subagent model |
+
+Every comment ends with a `<!-- pr-context-classifier -->` marker, and each posting subagent reads the existing comments first. A second run skips a pull request it already commented on.
+
+Running the workflow from another repository leaves the default `promptPath` unresolved. Pass the path to your checkout of this repository, or install the package and the subagent finds the prompt under `node_modules`.
+
 ## Tests
 
 ```bash
