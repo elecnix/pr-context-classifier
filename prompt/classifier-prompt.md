@@ -12,8 +12,9 @@ Before you decide, work through these steps:
 1. List each behavior the body claims, and each instruction or expectation it gives the reader about what to do, check, follow, or expect. When the change adds or edits documentation, guidance, or instructions, list the documented behaviors and instructions too. The reason for adding documentation does not replace an explanation of what it documents.
 2. For each claimed behavior, check that the body states its cause: what produces it and why. A behavior stated with "only", "never", or "always" is a scope limit, and the body must say why the limit exists. A description of what someone observes, or a statement that it is expected, does not state a cause.
 3. For each instruction or expectation, check that the body says how to carry it out: the steps, identifiers, or criteria the reader needs.
-4. For each claimed fix, check that the body describes the problem as it was observed.
-5. Answer COMPLETE only if every check passes. A fact counts as present if the body states it anywhere, including in a quoted command, log, or configuration excerpt.
+4. For each fix of a wrong behavior, a crash, or a wrong value, check that the body describes how long it was broken and which callers, records, or sessions it affected. One fact alone can be enough when the other is not knowable, so a defect caught before it shipped may state only when it was caught. This check does not apply to a rename, a move, or a refactor of code that already behaved correctly.
+5. For each removal, replacement, or move, check that the body lists what the change deliberately does not touch: the behavior that stays, the fields or paths that remain, and anything left unused or deferred. A change that only adds something has nothing to list, and this check passes.
+6. Answer COMPLETE only if every check passes. A fact counts as present if the body states it anywhere, including in a quoted command, log, or configuration excerpt.
 
 A false COMPLETE is the most serious error. Do not fill gaps from repository conventions, plausible implementation details, file names, or code snippets. A statement that something is "expected", "fixed", or "not a problem" does not explain why.
 
