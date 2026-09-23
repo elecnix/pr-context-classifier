@@ -212,6 +212,13 @@ because it moves with the match and a figure a reader cannot reproduce is worse
 than none.
 
 The prompt carries both as checks now, each with a limit so it does not fire on
-every body. A defect that never reached a shipping path has no duration, and a
+every body. A fix of a rename or a refactor has no blast radius to state, and a
 change that only adds something has nothing to list. `tests/config.test.ts`
 pins each check and each limit by phrase, so removing one fails the suite.
+
+The checks were measured before landing, on five bodies written to isolate one
+property each and run through both prompts. The first draft failed that test:
+written as "for each claimed fix", the blast-radius check demanded a duration
+for a rename, where nothing was ever wrong, and flagged two complete bodies. The
+check now names what it applies to. The measurement is not published as a score,
+for the reason Appendix A gives about the earlier prompt.

@@ -91,7 +91,7 @@ test("system prompt carries every check a body edit supplies", async () => {
 // carve-out is pinned by wording that appears nowhere else. Pinning a phrase
 // shared with the main clause would let a deleted carve-out pass.
 const BOUNDS = [
-  { check: "blast radius", phrase: "never reached a shipping path" },
+  { check: "blast radius", phrase: "this check does not apply" },
   { check: "negative scope", phrase: "has nothing to list" },
 ]
 
