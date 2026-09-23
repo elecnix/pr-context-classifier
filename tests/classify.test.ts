@@ -1,6 +1,8 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { parseResponse, parseVerdict, parseRationale, parseQuestions, toClassification } from "../src/classify.js"
+import { createServer } from "node:http"
+import type { AddressInfo } from "node:net"
+import { parseResponse, parseVerdict, parseRationale, parseQuestions, toClassification, realFetch, RequestTimeoutError } from "../src/classify.js"
 
 const MISSING_TEXT = `VERDICT: MISSING_CONTEXT
 RATIONALE: the body lowers the cache TTL but never describes the stale data it fixes.
@@ -73,4 +75,18 @@ test("parseResponse reports API errors", () => {
 
 test("parseResponse handles empty choices", () => {
   assert.equal(parseResponse({ choices: [] }).error, "response contains no choices")
+})
+test("realFetch gives up on a server that never answers", async () => {
+  const server = createServer(() => {})
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve))
+  const { port } = server.address() as AddressInfo
+  try {
+    await assert.rejects(
+      realFetch({ timeoutMs: 50 }).post(`http://127.0.0.1:${port}/`, {}, "{}"),
+      (err) => err instanceof RequestTimeoutError && err.message === "OpenRouter request timed out after 0.05s",
+    )
+  } finally {
+    server.closeAllConnections()
+    server.close()
+  }
 })
