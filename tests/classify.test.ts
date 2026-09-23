@@ -3,9 +3,9 @@ import assert from "node:assert/strict"
 import { parseResponse, parseVerdict, parseRationale, parseQuestions, toClassification } from "../src/classify.js"
 
 const MISSING_TEXT = `VERDICT: MISSING_CONTEXT
-RATIONALE: the body describes the staging-health status but no publisher for it.
+RATIONALE: the body lowers the cache TTL but never describes the stale data it fixes.
 CLARIFYING_QUESTIONS:
-- Which actor or workflow step publishes the staging-health status?
+- What stale data did users see before the TTL change, and how was it noticed?
 - Who consumes the status, and at what decision point?`
 
 const COMPLETE_TEXT = `VERDICT: COMPLETE
@@ -21,14 +21,14 @@ test("parseVerdict reads the verdict line", () => {
 test("parseRationale reads the rationale line", () => {
   assert.equal(
     parseRationale(MISSING_TEXT),
-    "the body describes the staging-health status but no publisher for it."
+    "the body lowers the cache TTL but never describes the stale data it fixes."
   )
 })
 
 test("parseQuestions collects bullet questions only", () => {
   const questions = parseQuestions(MISSING_TEXT)
   assert.equal(questions.length, 2)
-  assert.ok(questions[0]!.includes("actor or workflow step"))
+  assert.ok(questions[0]!.includes("stale data"))
   assert.ok(!questions[0]!.includes("- "))
 })
 
@@ -51,11 +51,11 @@ test("toClassification builds the structured output", () => {
 test("toClassification passes prNumber through", () => {
   const out = toClassification(COMPLETE_TEXT, {
     model: "openai/gpt-oss-20b",
-    prNumber: "1909",
+    prNumber: "42",
     question: "does it have context?",
     latencyMs: 5,
   })
-  assert.equal(out.prNumber, "1909")
+  assert.equal(out.prNumber, "42")
   assert.equal(out.clarifyingQuestions.length, 0)
 })
 

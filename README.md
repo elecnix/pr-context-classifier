@@ -5,8 +5,8 @@ reader complete context: what the PR is about and exactly what changed.
 When context is missing, it writes author-facing clarifying questions.
 
 The classifier runs on `openai/gpt-oss-20b` with bare routing through
-OpenRouter. The system prompt is the artifact measured by an Ori Eval on
-2026-09-17. Its provenance and the measurement are in Appendix A.
+OpenRouter. The current system prompt has no published measurement.
+Appendix A gives its history.
 
 ## Install
 
@@ -40,8 +40,8 @@ printf '%s' "$OPENROUTER_API_KEY" > ~/.secrets/openrouter-key
 # classify a body file
 pr-context-classifier body.md
 
-# classify PR 1909's body piped on stdin
-pr-context-classifier -n 1909 - < body.md
+# classify PR 42's body piped on stdin
+pr-context-classifier -n 42 - < body.md
 
 # custom question and model
 pr-context-classifier -q "Does this explain the change?" -m openai/gpt-oss-20b body.md
@@ -52,12 +52,12 @@ Output is one JSON document on stdout.
 ```json
 {
   "verdict": "MISSING_CONTEXT",
-  "rationale": "the body describes the staging-health status but no publisher for it.",
+  "rationale": "the body lowers the cache TTL but never describes the stale data it fixes.",
   "clarifyingQuestions": [
-    "Which actor or workflow step publishes the staging-health status?"
+    "What stale data did users see before the TTL change, and how was it noticed?"
   ],
   "model": "openai/gpt-oss-20b",
-  "prNumber": "1909",
+  "prNumber": "42",
   "question": "Does this pull-request body give a reader complete context to understand what the PR is about and exactly what changed, without reading code or the diff?",
   "latencyMs": 25935
 }
@@ -174,9 +174,14 @@ response parsing, and argument parsing. They never call the network.
 
 ## Appendix A: prompt provenance
 
-The system prompt in `prompt/classifier-prompt.md` is the exact text measured
-by an Ori Eval run on 2026-09-17. The eval used eleven real PR bodies, one
-labeled `missing-context` and ten labeled `complete`. The passing candidates
-(Kimi K3, GPT-OSS 20B, DeepSeek V4 Flash, Ling Flash) were measured on the
-eleven-case sweep. GPT-OSS 20B scored 11 of 11 label matches with the lowest
+An Ori Eval run on 2026-09-17 compared four models (Kimi K3, GPT-OSS 20B,
+DeepSeek V4 Flash, Ling Flash) on eleven real PR bodies, one labeled
+`missing-context` and ten labeled `complete`. GPT-OSS 20B had the lowest
 average latency and lowest cost, so the CLI defaults to it.
+
+That run measured an earlier prompt. The earlier prompt had a special-case
+block that encoded the answer to the eval's one `missing-context` case, so its
+score did not show how the prompt handles other bodies (issue #2). The current
+prompt in `prompt/classifier-prompt.md` replaces the block with general checks
+that apply to every body, and no eval has scored it. Treat its verdicts as
+unmeasured until an eval with more `missing-context` cases scores it.
