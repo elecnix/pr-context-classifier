@@ -4,7 +4,7 @@ import { mkdtemp, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { parseConfig, loadConfig, fetchKey, ConfigError } from "../src/config.js"
-import { extractFence } from "../src/prompt.js"
+import { extractFence, loadSystemPrompt } from "../src/prompt.js"
 
 async function tempDir() {
   return mkdtemp(join(tmpdir(), "prcc-"))
@@ -59,4 +59,13 @@ test("fetchKey throws on empty stdout", () => {
 test("extractFence pulls the prompt body", () => {
   const text = "intro\n```text\nhello world\n```\ntrailer"
   assert.equal(extractFence(text), "hello world")
+})
+// Terms from the special-calibration block that issue #2 removed. A prompt
+// that names them encodes one eval case's answer, not a general rule.
+const EVAL_CASE_TERMS = ["calibration", "staging-health", "gh debug", "successor"]
+
+test("system prompt names no term from a single eval case", async () => {
+  const prompt = (await loadSystemPrompt()).toLowerCase()
+  const found = EVAL_CASE_TERMS.filter((term) => prompt.includes(term))
+  assert.deepEqual(found, [])
 })
