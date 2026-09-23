@@ -186,3 +186,32 @@ score did not show how the prompt handles other bodies (issue #2). The current
 prompt in `prompt/classifier-prompt.md` replaces the block with general checks
 that apply to every body, and no eval has scored it. Treat its verdicts as
 unmeasured until an eval with more `missing-context` cases scores it.
+
+Two further checks came from evidence about how bodies change. A scan of 50
+recently merged pull requests read the edit history GitHub keeps for each
+description, compared consecutive revisions, and dropped bot and banner edits.
+41 of the 50 bodies carried a human edit: 69 edits, 322 added lines. Every
+added line was then read, and two kinds of context the prompt never asked for
+appeared in several unrelated pull requests.
+
+- **Blast radius.** Bodies that fix a defect were edited to add how long it had
+  been live, how widely it fired, or that it had never worked at all: a test
+  that had failed for weeks with nothing running it, a field that recorded zero
+  for every request since the route existed, a code path that never carried the
+  value. The prompt asked for "the effect" of a change, and a body satisfies
+  that by saying a bug is fixed without saying what it had been doing.
+- **Negative scope.** Bodies were edited to add what the change deliberately
+  left alone: a field that still ships and is still served, a value that stops
+  arriving but stays stored, a behaviour that remains for the other path. A body
+  listing only what moved leaves the reader unable to tell whether the
+  neighbouring thing moved too.
+
+Both patterns appear in at least four unrelated pull requests each under the
+strictest reading, and in more under a looser one. The count is not quoted here
+because it moves with the match and a figure a reader cannot reproduce is worse
+than none.
+
+The prompt carries both as checks now, each with a limit so it does not fire on
+every body. A defect that never reached a shipping path has no duration, and a
+change that only adds something has nothing to list. `tests/config.test.ts`
+pins each check and each limit by phrase, so removing one fails the suite.

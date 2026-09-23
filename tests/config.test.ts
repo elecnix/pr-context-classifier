@@ -69,3 +69,34 @@ test("system prompt names no term from a single eval case", async () => {
   const found = EVAL_CASE_TERMS.filter((term) => prompt.includes(term))
   assert.deepEqual(found, [])
 })
+
+// The two checks a study of body edits found missing, each pinned by a phrase
+// only that check carries. Deleting a check fails here rather than silently
+// costing recall. A reworded check needs its entry updated, which is the point:
+// the phrase is the contract between the prompt and its evidence.
+const REQUIRED_CHECKS = [
+  { name: "blast radius", phrase: "how long it was broken" },
+  { name: "negative scope", phrase: "deliberately does not touch" },
+]
+
+test("system prompt carries every check a body edit supplies", async () => {
+  const prompt = (await loadSystemPrompt()).toLowerCase()
+  const missing = REQUIRED_CHECKS.filter((c) => !prompt.includes(c.phrase)).map((c) => c.name)
+  assert.deepEqual(missing, [])
+})
+
+// A check with no limit fires on every body, which is the failure the removed
+// special-calibration block had in reverse: it named one case, an unbounded
+// check names none. So each check states when it does not apply, and the
+// carve-out is pinned by wording that appears nowhere else. Pinning a phrase
+// shared with the main clause would let a deleted carve-out pass.
+const BOUNDS = [
+  { check: "blast radius", phrase: "never reached a shipping path" },
+  { check: "negative scope", phrase: "has nothing to list" },
+]
+
+test("every new check states its own limit", async () => {
+  const prompt = (await loadSystemPrompt()).toLowerCase()
+  const unbounded = BOUNDS.filter((b) => !prompt.includes(b.phrase)).map((b) => b.check)
+  assert.deepEqual(unbounded, [])
+})
