@@ -177,7 +177,7 @@ response parsing, and argument parsing. They never call the network.
 
 The `review` workflow runs [Cite](https://github.com/elecnix/cite) on each
 pull request from this repository. Cite posts review comments and a check
-run. It calls `deepseek/deepseek-v4-flash-0731` through OpenRouter with the
+run. It calls `deepseek/deepseek-v4.1-flash` through OpenRouter with the
 `MODEL_API_KEY` repository secret. Pull requests from forks skip the review,
 because GitHub gives them a read-only token without secrets.
 
