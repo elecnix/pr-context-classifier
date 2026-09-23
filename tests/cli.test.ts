@@ -13,6 +13,7 @@ test("parseArgs defaults", () => {
   assert.equal(opts.model, "openai/gpt-oss-20b")
   assert.equal(opts.readStdin, false)
   assert.equal(opts.bodyFile, undefined)
+  assert.equal(opts.timeoutMs, 120_000)
 })
 
 test("parseArgs reads a body file", () => {
@@ -32,6 +33,17 @@ test("parseArgs parses short flags", () => {
   assert.equal(opts.model, "model/x")
   assert.equal(opts.bodyFile, "body.md")
 })
+test("parseArgs reads a timeout in seconds", () => {
+  const opts = parseArgs(["-t", "30", "body.md"])
+  assert.equal(opts.timeoutMs, 30_000)
+})
+
+test("the bin script rejects a timeout that is not a positive number", () => {
+  const result = spawnSync(process.execPath, [BIN, "-t", "0", "/nonexistent/body.md"], { encoding: "utf8" })
+  assert.equal(result.status, 2)
+  assert.match(result.stderr, /-t needs a positive number of seconds/)
+})
+
 test("the bin script passes a body file argument through", () => {
   const result = spawnSync(process.execPath, [BIN, "/nonexistent/body.md"], { encoding: "utf8" })
   assert.equal(result.status, 1)

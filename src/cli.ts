@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs"
 import { readFile } from "node:fs/promises"
 import { loadConfig, fetchKey, defaultConfigPath, ConfigError } from "./config.js"
 import { loadSystemPrompt, DEFAULT_USER_QUESTION, DEFAULT_MODEL, OPENROUTER_ENDPOINT } from "./prompt.js"
-import { classify, parseResponse, toClassification, realFetch } from "./classify.js"
+import { classify, parseResponse, toClassification, realFetch, RequestTimeoutError, DEFAULT_TIMEOUT_MS } from "./classify.js"
 
 const USAGE = `pr-context-classifier
 
@@ -19,6 +19,7 @@ Options:
   -n <number>    PR number, echoed in the output
   -m <slug>      model id (default: openai/gpt-oss-20b)
   -c <path>      path to config file
+  -t <seconds>   give up on the OpenRouter request after this long (default: 120)
   -h             show this help
   -              read PR body from stdin
 
@@ -34,6 +35,7 @@ type CliOptions = {
   prNumber?: string
   model: string
   configPath: string
+  timeoutMs: number
   bodyFile?: string
   readStdin: boolean
 }
@@ -49,6 +51,7 @@ export function parseArgs(argv: string[]): CliOptions {
   let prNumber: string | undefined
   let model = DEFAULT_MODEL
   let configPath = defaultConfigPath()
+  let timeoutMs = DEFAULT_TIMEOUT_MS
   let bodyFile: string | undefined
   let readStdin = false
   let i = 0
@@ -73,6 +76,10 @@ export function parseArgs(argv: string[]): CliOptions {
       const value = argv[++i]
       if (!value) usageError("-c needs a value")
       configPath = value
+    } else if (arg === "-t") {
+      const seconds = Number(argv[++i])
+      if (!(seconds > 0)) usageError("-t needs a positive number of seconds")
+      timeoutMs = seconds * 1000
     } else if (arg === "-") {
       readStdin = true
     } else if (arg.length > 1 && arg.startsWith("-")) {
@@ -83,7 +90,7 @@ export function parseArgs(argv: string[]): CliOptions {
     }
     i++
   }
-  return { question, prNumber, model, configPath, bodyFile, readStdin }
+  return { question, prNumber, model, configPath, timeoutMs, bodyFile, readStdin }
 }
 
 async function readBody(opts: CliOptions) {
@@ -132,7 +139,7 @@ export async function main(argv: string[]) {
       }),
     }
     const started = Date.now()
-    const result = await classify(realFetch(), request)
+    const result = await classify(realFetch({ timeoutMs: opts.timeoutMs }), request)
     const latencyMs = Date.now() - started
     if (result.status !== 200) {
       console.error(`error: OpenRouter returned HTTP ${result.status}`)
@@ -151,7 +158,7 @@ export async function main(argv: string[]) {
     })
     console.log(JSON.stringify(classification, null, 2))
   } catch (err) {
-    if (err instanceof ConfigError) {
+    if (err instanceof ConfigError || err instanceof RequestTimeoutError) {
       console.error(`error: ${err.message}`)
       process.exit(1)
     }

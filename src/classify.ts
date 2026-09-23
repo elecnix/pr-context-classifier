@@ -9,22 +9,38 @@ export type FetchResult = {
   body: unknown
 }
 
-export function realFetch() {
+export const DEFAULT_TIMEOUT_MS = 120_000
+
+export class RequestTimeoutError extends Error {}
+
+export function realFetch(opts: { timeoutMs?: number } = {}) {
+  const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS
   return {
     async post(url: string, headers: { [k: string]: string }, payload: string) {
-      const res = await fetch(url, {
-        method: "POST",
-        headers,
-        body: payload,
-      })
-      const text = await res.text()
+      let text: string
+      let status: number
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers,
+          body: payload,
+          signal: AbortSignal.timeout(timeoutMs),
+        })
+        status = res.status
+        text = await res.text()
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "TimeoutError") {
+          throw new RequestTimeoutError(`OpenRouter request timed out after ${timeoutMs / 1000}s`)
+        }
+        throw err
+      }
       let body: unknown
       try {
         body = JSON.parse(text)
       } catch {
         body = text
       }
-      return { status: res.status, body }
+      return { status, body }
     },
   }
 }

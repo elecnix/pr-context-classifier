@@ -74,6 +74,7 @@ for `COMPLETE`.
 | `-n <number>` | PR number, echoed in the output |
 | `-m <slug>` | model id (default: `openai/gpt-oss-20b`) |
 | `-c <path>` | config file path |
+| `-t <seconds>` | give up on the OpenRouter request after this long (default: 120) |
 | `-h` | help |
 | `-` | read the body from stdin |
 
