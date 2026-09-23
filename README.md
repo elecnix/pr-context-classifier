@@ -173,6 +173,14 @@ npm test
 The tests cover config parsing, the bash key resolution, prompt loading,
 response parsing, and argument parsing. They never call the network.
 
+## Code review
+
+The `review` workflow runs [Cite](https://github.com/elecnix/cite) on each
+pull request from this repository. Cite posts review comments and a check
+run. It calls `deepseek/deepseek-v4-flash-0731` through OpenRouter with the
+`MODEL_API_KEY` repository secret. Pull requests from forks skip the review,
+because GitHub gives them a read-only token without secrets.
+
 ## Appendix A: prompt provenance
 
 An Ori Eval run on 2026-09-17 compared four models (Kimi K3, GPT-OSS 20B,
