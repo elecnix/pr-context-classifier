@@ -1,3 +1,3 @@
 #!/usr/bin/env node
 const { main } = await import("../dist/src/cli.js")
-await main(process.argv.slice(1))
+await main(process.argv.slice(2))
