@@ -1,29 +1,25 @@
-# Cite reviews each pull request: https://github.com/elecnix/cite
-# The action reads the diff from the GitHub API, so the job has no checkout.
 name: review
-
 on:
   pull_request:
-
 permissions:
   contents: read
   pull-requests: write
   checks: write
-
 concurrency:
   group: cite-pr-${{ github.event.pull_request.number }}
   cancel-in-progress: true
-
 jobs:
   review:
-    # A fork pull request gets a read-only token and no secrets.
-    if: github.event.pull_request.head.repo.fork == false
     runs-on: ubuntu-latest
     steps:
-      - uses: elecnix/cite@eaebbe70378689d61158f43515471544e43c6038  # v0.8.0
+      - name: Review this pull request with Cite
+        uses: elecnix/cite@1c0537ba7f8df4dc5db0651f609f6b8834167150  # v0.11.2
         with:
-          # A model outage concludes the check as neutral. A finding still fails it.
-          tool_failure_blocks: false
-          model_id: deepseek/deepseek-v4.1-flash
-          model_base_url: https://openrouter.ai/api/v1
-          model_api_key: ${{ secrets.MODEL_API_KEY }}
+          # Ollama Cloud is the default provider. Set the CITE_PROVIDER
+          # repository variable to "openrouter" to switch this repository
+          # back; both keys exist in every repository.
+          structured_output: ${{ vars.CITE_PROVIDER == 'openrouter' && 'response_format' || 'tools' }}
+          require_parameters: ${{ vars.CITE_PROVIDER == 'openrouter' }}
+          model_api_key: ${{ vars.CITE_PROVIDER == 'openrouter' && secrets.MODEL_API_KEY || secrets.OLLAMA_API_KEY }}
+          model_base_url: ${{ vars.CITE_PROVIDER == 'openrouter' && 'https://openrouter.ai/api/v1' || 'https://ollama.com/v1' }}
+          model_id: ${{ vars.CITE_PROVIDER == 'openrouter' && 'deepseek/deepseek-v4-flash-0731' || 'deepseek-v4.1-flash' }}
