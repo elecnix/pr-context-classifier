@@ -9,15 +9,20 @@ export const DEFAULT_USER_QUESTION =
 export const DEFAULT_MODEL = "openai/gpt-oss-20b"
 export const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
 
-export async function loadSystemPrompt() {
-  const here = dirname(fileURLToPath(import.meta.url))
-  const path = join(here, "..", "..", PROMPT_FILE)
+/** Reads the system prompt from `path`, or from the built-in prompt file
+ *  when no path is given. Either file keeps the prompt in a ```text fence. */
+export async function loadSystemPrompt(path = builtInPromptPath()) {
   try {
     const text = await readFile(path, "utf8")
     return extractFence(text)
   } catch (err) {
     throw new Error(`cannot load classifier prompt at ${path}: ${(err as Error).message}`)
   }
+}
+
+export function builtInPromptPath() {
+  const here = dirname(fileURLToPath(import.meta.url))
+  return join(here, "..", "..", PROMPT_FILE)
 }
 
 /** The prompt file stores the artifact inside a fenced code block so

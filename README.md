@@ -71,12 +71,17 @@ for `COMPLETE`.
 | Flag | Meaning |
 | -- | -- |
 | `-q <text>` | reader question (default: built-in question) |
+| `-p <path>` | system prompt file (default: the built-in `prompt/classifier-prompt.md`) |
 | `-n <number>` | PR number, echoed in the output |
 | `-m <slug>` | model id (default: `openai/gpt-oss-20b`) |
 | `-c <path>` | config file path |
 | `-t <seconds>` | give up on the OpenRouter request after this long (default: 120) |
 | `-h` | help |
 | `-` | read the body from stdin |
+
+## Your own prompt
+
+`-p <path>` replaces the built-in system prompt with your own, so the same CLI judges an issue or a chat message against your checklist. Without `-p`, nothing changes. It reads the file the way it reads the built-in one: it sends only the text inside the first `` ```text `` fence, so the prose around the fence can explain the prompt to people. A file that is missing, or that has no such fence, stops the run with an error that gives its path, before the CLI looks for a key. Your prompt must ask for the same reply format, a `VERDICT:` line, a `RATIONALE:` line and `CLARIFYING_QUESTIONS:`, because the CLI parses that format. The user message still starts with the reader question from `-q` and labels the text `PR BODY:`, so write `-q` for your own kind of text.
 
 ## Key resolution
 
