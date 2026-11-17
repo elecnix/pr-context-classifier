@@ -81,7 +81,11 @@ for `COMPLETE`.
 
 ## Your own prompt
 
-`-p <path>` replaces the built-in system prompt with your own, so the same CLI judges an issue or a chat message against your checklist. Without `-p`, nothing changes. It reads the file the way it reads the built-in one: it sends only the text inside the first `` ```text `` fence, so the prose around the fence can explain the prompt to people. A file that is missing, or that has no such fence, stops the run with an error that gives its path, before the CLI looks for a key. Your prompt must ask for the same reply format, a `VERDICT:` line, a `RATIONALE:` line and `CLARIFYING_QUESTIONS:`, because the CLI parses that format. The user message still starts with the reader question from `-q` and labels the text `PR BODY:`, so write `-q` for your own kind of text.
+`-p <path>` uses your own system prompt instead of the built-in one. The CLI sends the text inside the file's first `` ```text `` fence, and your prompt must ask for the same `VERDICT`, `RATIONALE` and `CLARIFYING_QUESTIONS` reply.
+
+```sh
+pr-context-classifier -p my-prompt.md -q "Does this issue say what to fix?" issue.md
+```
 
 ## Key resolution
 
