@@ -103,7 +103,10 @@ export function parseArgs(argv: string[]): CliOptions {
 
 async function readBody(opts: CliOptions) {
   if (opts.readStdin || opts.bodyFile === undefined) {
-    const data = readFileSync("/dev/stdin")
+    // File descriptor 0 works whether stdin is a file, a pipe or a socket. Opening
+    // /dev/stdin fails with ENXIO on Linux when the parent passes a socket, as
+    // Node's child_process does.
+    const data = readFileSync(0)
     return data.toString("utf8")
   }
   try {
