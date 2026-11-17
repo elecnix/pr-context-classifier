@@ -71,12 +71,21 @@ for `COMPLETE`.
 | Flag | Meaning |
 | -- | -- |
 | `-q <text>` | reader question (default: built-in question) |
+| `-p <path>` | system prompt file (default: the built-in `prompt/classifier-prompt.md`) |
 | `-n <number>` | PR number, echoed in the output |
 | `-m <slug>` | model id (default: `openai/gpt-oss-20b`) |
 | `-c <path>` | config file path |
 | `-t <seconds>` | give up on the OpenRouter request after this long (default: 120) |
 | `-h` | help |
 | `-` | read the body from stdin |
+
+## Your own prompt
+
+`-p <path>` uses your own system prompt instead of the built-in one. The CLI sends the text inside the file's first `` ```text `` fence, and your prompt must ask for the same `VERDICT`, `RATIONALE` and `CLARIFYING_QUESTIONS` reply.
+
+```sh
+pr-context-classifier -p my-prompt.md -q "Does this issue say what to fix?" issue.md
+```
 
 ## Key resolution
 

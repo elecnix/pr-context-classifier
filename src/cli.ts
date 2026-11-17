@@ -16,6 +16,8 @@ Usage:
 
 Options:
   -q <text>      reader question (default: built-in question)
+  -p <path>      system prompt file, read from its \`\`\`text fence
+                 (default: the built-in prompt/classifier-prompt.md)
   -n <number>    PR number, echoed in the output
   -m <slug>      model id (default: openai/gpt-oss-20b)
   -c <path>      path to config file
@@ -32,6 +34,7 @@ Example config (~/.config/pr-context-classifier/config.json):
 
 type CliOptions = {
   question: string
+  promptPath?: string
   prNumber?: string
   model: string
   configPath: string
@@ -48,6 +51,7 @@ function usageError(message: string): never {
 
 export function parseArgs(argv: string[]): CliOptions {
   let question = DEFAULT_USER_QUESTION
+  let promptPath: string | undefined
   let prNumber: string | undefined
   let model = DEFAULT_MODEL
   let configPath = defaultConfigPath()
@@ -64,6 +68,10 @@ export function parseArgs(argv: string[]): CliOptions {
       const value = argv[++i]
       if (!value) usageError("-q needs a value")
       question = value
+    } else if (arg === "-p") {
+      const value = argv[++i]
+      if (!value) usageError("-p needs a value")
+      promptPath = value
     } else if (arg === "-n") {
       const value = argv[++i]
       if (!value) usageError("-n needs a value")
@@ -90,18 +98,29 @@ export function parseArgs(argv: string[]): CliOptions {
     }
     i++
   }
-  return { question, prNumber, model, configPath, timeoutMs, bodyFile, readStdin }
+  return { question, promptPath, prNumber, model, configPath, timeoutMs, bodyFile, readStdin }
 }
 
 async function readBody(opts: CliOptions) {
   if (opts.readStdin || opts.bodyFile === undefined) {
-    const data = readFileSync("/dev/stdin")
+    // File descriptor 0 works whether stdin is a file, a pipe or a socket. Opening
+    // /dev/stdin fails with ENXIO on Linux when the parent passes a socket, as
+    // Node's child_process does.
+    const data = readFileSync(0)
     return data.toString("utf8")
   }
   try {
     return await readFile(opts.bodyFile, "utf8")
   } catch (err) {
     throw new ConfigError(`cannot read PR body file ${opts.bodyFile}: ${(err as Error).message}`)
+  }
+}
+
+async function loadPrompt(opts: CliOptions) {
+  try {
+    return await loadSystemPrompt(opts.promptPath)
+  } catch (err) {
+    throw new ConfigError((err as Error).message)
   }
 }
 
@@ -121,8 +140,8 @@ export async function main(argv: string[]) {
     if (body.length === 0) {
       usageError("PR body is empty")
     }
+    const systemPrompt = await loadPrompt(opts)
     const apiKey = await resolveKey(opts)
-    const systemPrompt = await loadSystemPrompt()
     const request = {
       endpoint: OPENROUTER_ENDPOINT,
       headers: {
